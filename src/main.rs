@@ -11,9 +11,18 @@ fn check_key_validity(key: &Vec<Vec<i32>>) -> Result<(), &'static str> {
     Ok(())
 }
 
-pub fn encode_hill(text: &str, key: Vec<Vec<i32>>) -> Result<String, &'static str>{
+
+fn mod_26(key: &mut Vec<Vec<i32>>) {
+    for row in key.iter_mut() {
+        for elem in row.iter_mut() {
+            *elem = (*elem % 26 + 26) % 26;
+        }
+    }
+}
+pub fn encode_hill(text: &str, mut key: Vec<Vec<i32>>) -> Result<String, &'static str>{
     check_key_validity(&key)?;
-    
+    mod_26(&mut key);
+
     Ok(String::from("ok"))
 
 
@@ -37,6 +46,16 @@ mod tests {
     #[test]
     fn non_square_key() {
         assert_eq!(encode_hill("test", vec![vec![1, 2], vec![0]]), Err("Error: key matrix should be a square matrix"));
+    }
+
+    #[test]
+    fn mod_26_negative_vals() {
+        let mut key = vec![vec![-90, -57], vec![12, 33]];
+        mod_26(&mut key);
+        assert_eq!(
+            key, 
+            vec![vec![14, 21], vec![12, 7]]
+        );
     }
 
 
