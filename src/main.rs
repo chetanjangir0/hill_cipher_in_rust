@@ -1,25 +1,34 @@
-fn check_key_validity(key: &Vec<Vec<i32>>) -> Result<(), &'static str> {
-    let n = key.len();
-    if n == 0 {
-        return Err("Error: key is empty");
+use nalgebra::DMatrix;
+
+fn check_key_validity(key: &DMatrix<f64>) -> Result<(), &'static str> {
+    if key.nrows() == 0 {
+        return Err("Error: key matrix is empty");
     }
     
-    if !key.iter().all(|row| row.len() == n) {
+    if !(key.nrows() == key.ncols()) {
         return Err("Error: key matrix should be a square matrix");
+    }
+
+    if key.determinant() == 0.0 {
+        return Err("Error: key matrix should be invertible");
     }
 
     Ok(())
 }
 
+// fn text_to_numbers(&str) -> Vec<u8> {
 
-fn mod_26(key: &mut Vec<Vec<i32>>) {
-    for row in key.iter_mut() {
-        for elem in row.iter_mut() {
-            *elem = (*elem % 26 + 26) % 26;
-        }
+// }
+
+
+fn mod_26(key: &mut DMatrix<f64>) {
+    for val in key.iter_mut() {
+        *val = val.rem_euclid(26.0);
     }
 }
-pub fn encode_hill(text: &str, mut key: Vec<Vec<i32>>) -> Result<String, &'static str>{
+
+
+pub fn encode_hill(text: &str, mut key: DMatrix<f64>) -> Result<String, &'static str>{
     check_key_validity(&key)?;
     mod_26(&mut key);
 
@@ -40,21 +49,40 @@ mod tests {
 
     #[test]
     fn empty_key() {
-        assert_eq!(encode_hill("test", vec![]), Err("Error: key is empty"));
+        assert_eq!(
+            encode_hill("test", DMatrix::zeros(0, 0)), 
+            Err("Error: key matrix is empty")
+        );
     }
 
     #[test]
     fn non_square_key() {
-        assert_eq!(encode_hill("test", vec![vec![1, 2], vec![0]]), Err("Error: key matrix should be a square matrix"));
+        let data = vec![
+            1.0, 2.0, 3.0,
+            4.0, 5.0, 6.0
+        ];
+        assert_eq!(
+            encode_hill("test", DMatrix::from_row_slice(2, 3, &data)), 
+            Err("Error: key matrix should be a square matrix")
+        );
     }
 
     #[test]
     fn mod_26_negative_vals() {
-        let mut key = vec![vec![-90, -57], vec![12, 33]];
+        let data = vec![-90.0, -57.0, 12.0, 33.0];
+        let mut key = DMatrix::from_row_slice(2, 2, &data);
         mod_26(&mut key);
         assert_eq!(
             key, 
-            vec![vec![14, 21], vec![12, 7]]
+            DMatrix::from_row_slice(2, 2, &vec![14.0, 21.0, 12.0, 7.0])
+        );
+    }
+
+    #[test]
+    fn non_invertible_matrix() {
+        assert_eq!(
+            encode_hill("test", DMatrix::from_row_slice(2, 2, &vec![2.0, 4.0, 1.0, 2.0])),
+            Err("Error: key matrix should be invertible")
         );
     }
 
