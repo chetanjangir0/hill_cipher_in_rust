@@ -16,9 +16,17 @@ fn check_key_validity(key: &DMatrix<f64>) -> Result<(), &'static str> {
     Ok(())
 }
 
-// fn text_to_numbers(&str) -> Vec<u8> {
-
-// }
+fn text_to_numbers(text: &str) -> Vec<u8> {
+    text.chars()
+        .filter_map(|c| {
+            if c.is_ascii_alphabetic() {
+                Some(c.to_ascii_uppercase() as u8 - b'A')
+            } else {
+                None
+            }
+        })
+        .collect()
+}
 
 
 fn mod_26(key: &mut DMatrix<f64>) {
@@ -83,6 +91,14 @@ mod tests {
         assert_eq!(
             encode_hill("test", DMatrix::from_row_slice(2, 2, &vec![2.0, 4.0, 1.0, 2.0])),
             Err("Error: key matrix should be invertible")
+        );
+    }
+
+    #[test]
+    fn text_to_numbers_test() {
+        assert_eq!(
+            text_to_numbers("123 ABC xyz!?"),
+            vec![0, 1, 2, 23, 24, 25]
         );
     }
 
