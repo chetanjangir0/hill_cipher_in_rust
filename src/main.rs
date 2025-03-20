@@ -1,4 +1,4 @@
-use nalgebra::DMatrix;
+use nalgebra::{DMatrix, DVector};
 
 fn check_key_validity(key: &DMatrix<f64>) -> Result<(), &'static str> {
     if key.nrows() == 0 {
@@ -42,16 +42,33 @@ fn mod_26(key: &mut DMatrix<f64>) {
 }
 
 
-pub fn encode_hill(text: &str, mut key: DMatrix<f64>) -> Result<String, &'static str>{
+pub fn encode_hill(text: &str, mut key: DMatrix<f64>) -> Result<String, &'static str> {
     check_key_validity(&key)?;
     mod_26(&mut key);
 
-    Ok(String::from("ok"))
+    let chunk_size = (&key).ncols();
+    let text_vector = text_to_numbers(text);
+    let mut encrypted_data = Vec::new();
+    
+    for chunk in text_vector.chunks(chunk_size) {
+        let mut text_chunk = vec![0.0; chunk_size]; // padding if chunk is small
+        for (i, &num) in chunk.iter().enumerate() {
+            text_chunk[i] = num as f64;
+        }
 
+        let text_chunk = DVector::from_vec(text_chunk);
+
+        let result = &key * text_chunk;
+
+        encrypted_data.extend(result.iter().map(|&x| ((x).round() as u8) % 26));
+    }
+    Ok(numbers_to_text(&encrypted_data))
 
 }
 
-// pub fn decode_hill() {}
+pub fn decode_hill(text: &str, mut key: DMatrix<f64>) -> Result<String, &'static str> {
+
+}
 
 
 
