@@ -28,6 +28,12 @@ fn text_to_numbers(text: &str) -> Vec<u8> {
         .collect()
 }
 
+fn numbers_to_text(nums: &[u8]) -> String {
+    nums.iter()
+        .map(|&n| (n + b'A') as char)
+        .collect()
+}
+
 
 fn mod_26(key: &mut DMatrix<f64>) {
     for val in key.iter_mut() {
@@ -99,6 +105,14 @@ mod tests {
         assert_eq!(
             text_to_numbers("123 ABC xyz!?"),
             vec![0, 1, 2, 23, 24, 25]
+        );
+    }
+
+    #[test]
+    fn numbers_to_text_test() {
+        assert_eq!(
+            numbers_to_text(&vec![0, 1, 2, 23, 24, 25]),
+            "ABCXYZ"
         );
     }
 
