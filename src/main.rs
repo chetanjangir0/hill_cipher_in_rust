@@ -2,13 +2,7 @@ use nalgebra::Matrix2;
 
 /// Returns Some(inverse) if it exists (i.e. when gcd(a, m) == 1), else None.
 fn mod_inv(a: i32, m: i32) -> Option<i32> {
-    let a = a.rem_euclid(m);
-    for x in 1..m {
-        if (a * x) % m == 1 {
-            return Some(x);
-        }
-    }
-    None
+    (1..m).find(|&x| (a * x) % m == 1)
 }
 
 fn check_key_validity(key: &Matrix2<i32>) -> Result<(), &'static str> {
@@ -38,13 +32,12 @@ fn numbers_to_text(nums: &[u8]) -> String {
         .collect()
 }
 
-
 fn process_2x2_chunks(text_vector: Vec<u8>, key: &Matrix2<i32>) -> Vec<u8> {
     let mut result_data = Vec::new();
-    
+
     for chunk in text_vector.chunks(2) {
         // if chunk is incomplete then padding with 0
-        let a = *chunk.get(0).unwrap_or(&0) as i32;
+        let a = *chunk.first().unwrap_or(&0) as i32;
         let b = *chunk.get(1).unwrap_or(&0) as i32;
 
         // matrix mult
@@ -53,10 +46,9 @@ fn process_2x2_chunks(text_vector: Vec<u8>, key: &Matrix2<i32>) -> Vec<u8> {
         result_data.push(x.rem_euclid(26) as u8);
         result_data.push(y.rem_euclid(26) as u8);
     }
-    
+
     result_data
 }
-
 
 pub fn encode_hill(text: &str, key: Matrix2<i32>) -> Result<String, &'static str> {
     check_key_validity(&key)?;
@@ -64,7 +56,6 @@ pub fn encode_hill(text: &str, key: Matrix2<i32>) -> Result<String, &'static str
     let text_vector = text_to_numbers(text);
     let encrypted_data = process_2x2_chunks(text_vector, &key);
     Ok(numbers_to_text(&encrypted_data))
-
 }
 
 pub fn decode_hill(text: &str, key: Matrix2<i32>) -> Result<String, &'static str> {
@@ -74,7 +65,7 @@ pub fn decode_hill(text: &str, key: Matrix2<i32>) -> Result<String, &'static str
     let det_mod = det.rem_euclid(26);
     let det_inv = match mod_inv(det_mod, 26) {
         Some(x) => x,
-        None => return Err("Error: key matrix is not invertible mod 26")
+        None => return Err("Error: key matrix is not invertible mod 26"),
     };
 
     // compute the inverse using 2x2 formula
@@ -89,9 +80,6 @@ pub fn decode_hill(text: &str, key: Matrix2<i32>) -> Result<String, &'static str
     let decrypted_data = process_2x2_chunks(text_vector, &inv_key);
     Ok(numbers_to_text(&decrypted_data))
 }
-
-
-
 
 #[cfg(test)]
 mod tests {
@@ -108,18 +96,12 @@ mod tests {
 
     #[test]
     fn test_text_to_numbers_conversion() {
-        assert_eq!(
-            text_to_numbers("123 ABC xyz!?"),
-            vec![0, 1, 2, 23, 24, 25]
-        );
+        assert_eq!(text_to_numbers("123 ABC xyz!?"), vec![0, 1, 2, 23, 24, 25]);
     }
 
     #[test]
     fn test_numbers_to_text_conversion() {
-        assert_eq!(
-            numbers_to_text(&vec![0, 1, 2, 23, 24, 25]),
-            "ABCXYZ"
-        );
+        assert_eq!(numbers_to_text(&[0, 1, 2, 23, 24, 25]), "ABCXYZ");
     }
 
     #[test]
